@@ -43,6 +43,7 @@ char const PROMPT = '$';
 #include <fcntl.h> //O_WRONLY, O_CREAT, O_TRUNC
 #include <sys/stat.h> //S_IRUSR, S_IWUSR
 
+//#region[ Azul ]
 int check_internal(char **args);
 int internal_cd(char **args);
 int internal_export(char **args);
@@ -57,6 +58,7 @@ int execute_line(char *line);
 
 static char mi_shell[COMMAND_LINE_SIZE]; //variable global para guardar el nombre del minishell
 
+//#endregion
 //static pid_t foreground_pid = 0;
 struct info_process {
 	pid_t pid;
