@@ -227,8 +227,9 @@ int main(int argc, char *argv[]) {
     //Inicializamos jobs[0]
     jobs_list[0].pid = 0;
     jobs_list[0].status = 'N';
-    strcopy(jobs_list[0].cmd, '\0');
-    strcopy(mi_shell, argv[0]);
+    memset(jobs_list[0].cmd, '\0', sizeof(jobs_list[0].cmd));
+    //strcpy(jobs_list[0].cmd, '\0');
+    strcpy(mi_shell, argv[0]);
     while (1) {
         if (read_line(line)) { // !=NULL
             execute_line(line);

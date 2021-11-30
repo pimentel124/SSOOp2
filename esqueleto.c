@@ -183,6 +183,7 @@ int execute_line(char *line) {
     char *args[ARGS_SIZE];
     pid_t pid, status;
     char command_line[COMMAND_LINE_SIZE];
+    
 
     //copiamos la línea de comandos sin '\n' para guardarlo en el array de structs de los procesos
     memset(command_line, '\0', sizeof(command_line)); 
@@ -199,6 +200,8 @@ int execute_line(char *line) {
     return 0;
 }
 
+
+//#region [Amarillo]
 int main(int argc, char *argv[]) {
     char line[COMMAND_LINE_SIZE];
     memset(line, 0, COMMAND_LINE_SIZE);
@@ -210,7 +213,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-
+//#endregion
 
 
 
