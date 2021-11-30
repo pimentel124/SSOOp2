@@ -21,6 +21,9 @@ static struct info_process jobs_list[N_JOBS];  // Tabla de procesos. La posició
 void imprimir_prompt();
 
 int check_internal(char **args) {
+    #if  DEBUGN1
+    printf("llega a check_internal", args[0]);
+    #endif
     if (!strcmp(args[0], "cd"))
         return internal_cd(args);
     if (!strcmp(args[0], "export"))
@@ -31,7 +34,15 @@ int check_internal(char **args) {
         return internal_jobs(args);
     if (!strcmp(args[0], "bg"))
         return internal_bg(args);
+    if (!strcmp(args[0], "pwd"))
+        return internal_fg(args);
+    if (!strcmp(args[0], "pws"))
+        return internal_fg(args);
+    if (!strcmp(args[0], "ls"))
+        return internal_fg(args);
     if (!strcmp(args[0], "fg"))
+        return internal_fg(args);
+    if (!strcmp(args[0], "sleep"))
         return internal_fg(args);
     if (!strcmp(args[0], "exit"))
         exit(0);
@@ -139,9 +150,9 @@ int execute_line(char *line) {
 
     if (parse_args(args, line) > 0) {
         if (check_internal(args)) {
-#if DEBUGN3
-            fprintf(stderr, GRIS "[execute_line()→ PID padre: %d]\n" RESET_FORMATO, getpid());
-#endif
+            #if DEBUGN3
+                        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d]\n" RESET_FORMATO, getpid());
+            #endif
 
             pid = fork();
             if (pid == 0)  // Proceso Hijo:
