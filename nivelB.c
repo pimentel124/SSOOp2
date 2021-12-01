@@ -147,19 +147,24 @@ int execute_line(char *line) {
 
     if (parse_args(args, line) > 0) {
         if (check_internal(args)) {
-            #if DEBUGN3
-                        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
-            #endif
+#if DEBUGN3
+            fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
+#endif
 
             pid = fork();
             if (pid == 0)  // Proceso Hijo:
             {
+                signal(SIGCHLD, SIG_DFL);  // Defaul signal. Interruption by stop signal or exit of child process
+
+                signal(SIGINT, SIG_IGN);  // interruption signal Ctrl+C
+                
                 fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), line);
                 execvp(args[0], args);
                 fprintf(stderr, "%s: No se ha encontrado el comando\n", line);
                 exit(-1);
             } else if (pid > 0)  // Proceso Padre:
             {
+                signal(SIGINT, ctrlc);  // associate ctrl+c handler to ctrlc function
                 jobs_list[0].status = 'E';
                 wait(&status);
                 if (WIFEXITED(status)) {
@@ -169,7 +174,7 @@ int execute_line(char *line) {
                         fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado por señal %d]\n", pid, line, WTERMSIG(status));
                     }
                 }
-            } 
+            }
         }
     }
     jobs_list[0].pid = 0;
@@ -192,4 +197,51 @@ int main(int argc, char *argv[]) {
         }
     }
     return 0;
+}
+
+//ctrlc handler of SIGINT signal
+void ctrlc(int signum) {
+    signal(SIGINT, ctrlc);
+
+    if (jobs_list[0].pid > 0) {  // if theres a process running in foreground
+
+        if (strcmp(jobs_list[0].command_line, mi_shell)) {  //if the process IS NOT the minishell
+            fprintf(stderr, GRIS "ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].command_line);
+            printf(stderr, GRIS "ctrlc()→ Señal %d enviada a %d(%s) por %d(%s)]", SIGTERM, jobs_list[0].pid, jobs_list[0].command_line, getpid(), mi_shell);
+            kill(jobs_list[0].pid, SIGTERM);
+        } else {  // if the process is the minishell
+            fprint(stderr, ROJO_T "ctrlc()→ Señal no enviada debido a que el proceso en foreground es el shell");
+        }
+        else {  //if theres no process running in foreground
+            frprintf(stderr, GRIS "ctrlc())→ Señal %d no enviada por %d(%s) debido a que no hay proceso en foreground", SIGTERM, getpid(), mi_shell;
+        }
+        printf(\n);
+        fflush(stdout);
+    }
+
+    fflush(stdout);
+}
+
+//reaper function. Handles the SIGCHLD signal.
+void reaper(int signum) {
+    printf("Reaper called: %d \n", sig);
+
+    pid_t pid;
+    int status;
+
+    signal(SIGCHLD, reaper);
+
+    while ((pid = waitpid(-1, &status, WNOHANG) > 0)) {
+        if (WIFSIGNALED(status)) {  //if the process has been killed by a signal
+            fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d(%s) finalizado por señal %d]\n", pid, jobs_list[0].command_line, WTERMSIG(status));
+        }
+
+        else if (WIFEXITED(status)) {  //if the process has exited normally
+            //do nothing
+        }
+
+        jobs_list[0].pid = 0;
+        jobs_list[0].status = 'F';
+        strcpy(jobs_list[0].command_line, "");
+    }
 }
