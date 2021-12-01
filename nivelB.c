@@ -19,6 +19,8 @@ struct info_process {
 static struct info_process jobs_list[N_JOBS];  // Tabla de procesos. La posición 0 será para el foreground
 
 void imprimir_prompt();
+void ctrlc();
+void reaper();
 
 int check_internal(char **args) {
     if (!strcmp(args[0], "cd"))
@@ -139,11 +141,11 @@ int parse_args(char **args, char *line) {
 int execute_line(char *line) {
     char *args[ARGS_SIZE];
     pid_t pid, status;
-    char command_line[COMMAND_LINE_SIZE];
+    char cmd[COMMAND_LINE_SIZE];
 
     // copiamos la línea de comandos sin '\n' para guardarlo en el array de structs de los procesos
-    memset(command_line, '\0', sizeof(command_line));
-    strcpy(command_line, line);  // antes de llamar a parse_args() que modifica line
+    memset(cmd, '\0', sizeof(cmd));
+    strcpy(cmd, line);  // antes de llamar a parse_args() que modifica line
 
     if (parse_args(args, line) > 0) {
         if (check_internal(args)) {
@@ -205,26 +207,25 @@ void ctrlc(int signum) {
 
     if (jobs_list[0].pid > 0) {  // if theres a process running in foreground
 
-        if (strcmp(jobs_list[0].command_line, mi_shell)) {  //if the process IS NOT the minishell
-            fprintf(stderr, GRIS "ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].command_line);
-            printf(stderr, GRIS "ctrlc()→ Señal %d enviada a %d(%s) por %d(%s)]", SIGTERM, jobs_list[0].pid, jobs_list[0].command_line, getpid(), mi_shell);
+        if (strcmp(jobs_list[0].cmd, mi_shell)) {  //if the process IS NOT the minishell
+            fprintf(stderr, GRIS "ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
+            fprintf(stderr, GRIS "ctrlc()→ Señal %d enviada a %d(%s) por %d(%s)]", SIGTERM, jobs_list[0].pid, jobs_list[0].cmd, getpid(), mi_shell);
             kill(jobs_list[0].pid, SIGTERM);
         } else {  // if the process is the minishell
-            fprint(stderr, ROJO_T "ctrlc()→ Señal no enviada debido a que el proceso en foreground es el shell");
+            fprintf(stderr, ROJO_T "ctrlc()→ Señal no enviada debido a que el proceso en foreground es el shell");
         }
-        else {  //if theres no process running in foreground
-            frprintf(stderr, GRIS "ctrlc())→ Señal %d no enviada por %d(%s) debido a que no hay proceso en foreground", SIGTERM, getpid(), mi_shell;
+        }else {  //if theres no process running in foreground
+            fprintf(stderr, GRIS "ctrlc())→ Señal %d no enviada por %d(%s) debido a que no hay proceso en foreground", SIGTERM, getpid(), mi_shell);
         }
-        printf(\n);
+        printf("\n");
         fflush(stdout);
-    }
+    
 
-    fflush(stdout);
+
 }
 
 //reaper function. Handles the SIGCHLD signal.
 void reaper(int signum) {
-    printf("Reaper called: %d \n", sig);
 
     pid_t pid;
     int status;
@@ -233,7 +234,7 @@ void reaper(int signum) {
 
     while ((pid = waitpid(-1, &status, WNOHANG) > 0)) {
         if (WIFSIGNALED(status)) {  //if the process has been killed by a signal
-            fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d(%s) finalizado por señal %d]\n", pid, jobs_list[0].command_line, WTERMSIG(status));
+            fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d(%s) finalizado por señal %d]\n", pid, jobs_list[0].cmd, WTERMSIG(status));
         }
 
         else if (WIFEXITED(status)) {  //if the process has exited normally
@@ -242,6 +243,6 @@ void reaper(int signum) {
 
         jobs_list[0].pid = 0;
         jobs_list[0].status = 'F';
-        strcpy(jobs_list[0].command_line, "");
+        strcpy(jobs_list[0].cmd, "");
     }
 }
