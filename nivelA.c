@@ -21,9 +21,6 @@ static struct info_process jobs_list[N_JOBS];  // Tabla de procesos. La posició
 void imprimir_prompt();
 
 int check_internal(char **args) {
-    #if  DEBUGN1
-    printf("llega a check_internal", args[0]);
-    #endif
     if (!strcmp(args[0], "cd"))
         return internal_cd(args);
     if (!strcmp(args[0], "export"))
@@ -73,7 +70,7 @@ int internal_jobs(char **args) {
 
 int internal_fg(char **args) {
 #if DEBUGN1
-    printf("[internal_fg()→ Esta función enviará un trabajo detenido al foreground reactivando su ejecución, o uno del background al foreground ]\n");
+    printf(GRIS "[internal_fg()→ Esta función enviará un trabajo detenido al foreground reactivando su ejecución, o uno del background al foreground ]\n");
 #endif
     return 1;
 }
@@ -151,13 +148,13 @@ int execute_line(char *line) {
     if (parse_args(args, line) > 0) {
         if (check_internal(args)) {
             #if DEBUGN3
-                        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d]\n" RESET_FORMATO, getpid());
+                        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
             #endif
 
             pid = fork();
             if (pid == 0)  // Proceso Hijo:
             {
-                fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d]\n" RESET_FORMATO, getpid());
+                fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), line);
                 execvp(args[0], args);
                 fprintf(stderr, "%s: No se ha encontrado el comando\n", line);
                 exit(-1);
@@ -166,17 +163,16 @@ int execute_line(char *line) {
                 jobs_list[0].status = 'E';
                 wait(&status);
                 if (WIFEXITED(status)) {
-                    fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+                    fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado con exit(), estado: %d]\n", pid, line, WEXITSTATUS(status));
                 } else {
                     if (WIFSIGNALED(status)) {
-                        fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado por señal %d]\n", pid, WTERMSIG(status));
+                        fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado por señal %d]\n", pid, line, WTERMSIG(status));
                     }
                 }
-            } else {
-                fprintf(stderr, "Error %d: %s\n", errno, strerror(errno));
-            }
+            } 
         }
     }
+    jobs_list[0].pid = 0;
     return 0;
 }
 
