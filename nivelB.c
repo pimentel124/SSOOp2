@@ -8,7 +8,7 @@ la trocea en tokens y chequea si se trata de comandos internos
 
 #include "cabecera.h"
 
-static char mi_shell[COMMAND_LINE_SIZE];  // variable global para guardar el nombre del minishell
+static char mi_shell[COMMAND_LINE_SIZE]; // variable global para guardar el nombre del minishell
 
 // static pid_t foreground_pid = 0;
 struct info_process {
@@ -242,7 +242,7 @@ void reaper(int signum) {
         }
 
         jobs_list[0].pid = 0;
-        jobs_list[0].status = 'F';
+        jobs_list[0].status = 'F'; //return status to default
         strcpy(jobs_list[0].cmd, "");
     }
 }
