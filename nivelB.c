@@ -184,6 +184,10 @@ int execute_line(char *line) {
 }
 
 int main(int argc, char *argv[]) {
+
+    signal(SIGCHLD, reaper);
+    signal(SIGINT, ctrlc);    
+
     char line[COMMAND_LINE_SIZE];
     memset(line, 0, COMMAND_LINE_SIZE);
 
