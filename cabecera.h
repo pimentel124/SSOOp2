@@ -46,5 +46,6 @@ int internal_fg(char **args);
 char *read_line(char *line);
 int parse_args(char **args, char *line);
 int execute_line(char *line);
-void ctrlc(int signum);
+
 void reaper(int signum);
+void ctrlc(int signum);
