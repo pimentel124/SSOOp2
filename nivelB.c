@@ -33,6 +33,8 @@ int check_internal(char **args) {
         return internal_fg(args);
     if (!strcmp(args[0], "sleep"))
         return internal_fg(args);
+    if (!strcmp(args[0], mi_shell))
+        return internal_fg(args);
     if (!strcmp(args[0], "exit"))
         exit(0);
     return 0;  // no es un comando interno
@@ -144,7 +146,6 @@ int execute_line(char *line) {
 
             pid = fork();
             jobs_list[0].pid=pid;
-
             if (pid == 0)  // Proceso Hijo:
             {
                 signal(SIGCHLD, SIG_DFL); 
@@ -189,9 +190,9 @@ void ctrlc(int signum){ //Manejador propio para la señal SIGINT (Ctrl+C).
     signal(SIGINT, ctrlc);
     printf("\n");
     fflush(stdout);
+    fprintf(stderr, GRIS "[ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
     if (jobs_list[0].pid > 0) {  // if theres a process running in foreground
         if (strcmp(jobs_list[0].cmd, mi_shell)) {  //if the process IS NOT the minishell
-            fprintf(stderr, GRIS "[ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
             fprintf(stderr, GRIS "[ctrlc()→ Señal %d enviada a %d(%s) por %d(%s)]", SIGTERM, jobs_list[0].pid, jobs_list[0].cmd, getpid(), mi_shell);
             kill(jobs_list[0].pid, SIGTERM);
         } 
