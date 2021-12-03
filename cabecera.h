@@ -46,6 +46,12 @@ int internal_fg(char **args);
 char *read_line(char *line);
 int parse_args(char **args, char *line);
 int execute_line(char *line);
+int is_background(char **args);
 
 void reaper(int signum);
 void ctrlc(int signum);
+void ctrlz(int signum);
+
+int jobs_list_add(pid_t pid, char status, char *command_line);
+int jobs_list_find(pid_t pid);
+int jobs_list_remove(int pos);
