@@ -190,7 +190,7 @@ void ctrlc(int signum){ //Manejador propio para la señal SIGINT (Ctrl+C).
     printf("\n");
     fflush(stdout);
     if (jobs_list[0].pid > 0) {  // if theres a process running in foreground
-        if (strcmp(jobs_list[0].cmd, mi_shell) != 0) {  //if the process IS NOT the minishell
+        if (strcmp(jobs_list[0].cmd, mi_shell)) {  //if the process IS NOT the minishell
             fprintf(stderr, GRIS "[ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
             fprintf(stderr, GRIS "[ctrlc()→ Señal %d enviada a %d(%s) por %d(%s)]", SIGTERM, jobs_list[0].pid, jobs_list[0].cmd, getpid(), mi_shell);
             kill(jobs_list[0].pid, SIGTERM);
