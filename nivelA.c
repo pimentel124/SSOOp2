@@ -142,6 +142,7 @@ int execute_line(char *line) {
     char command_line[COMMAND_LINE_SIZE];
 
     // copiamos la línea de comandos sin '\n' para guardarlo en el array de structs de los procesos
+    strcpy(jobs_list[0].cmd, line);
     memset(command_line, '\0', sizeof(command_line));
     strcpy(command_line, line);  // antes de llamar a parse_args() que modifica line
 
@@ -150,29 +151,30 @@ int execute_line(char *line) {
             #if DEBUGN3
                         fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
             #endif
-
+            
             pid = fork();
             if (pid == 0)  // Proceso Hijo:
             {
-                fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), line);
+                fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), jobs_list[0].cmd);
                 execvp(args[0], args);
-                fprintf(stderr, "%s: No se ha encontrado el comando\n", line);
+                fprintf(stderr, "%s: No se ha encontrado el comando\n", jobs_list[0].cmd);
                 exit(-1);
             } else if (pid > 0)  // Proceso Padre:
             {
                 jobs_list[0].status = 'E';
                 wait(&status);
                 if (WIFEXITED(status)) {
-                    fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado con exit(), estado: %d]\n", pid, line, WEXITSTATUS(status));
+                    fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado con exit(), estado: %d]\n", pid, jobs_list[0].cmd, WEXITSTATUS(status));
                 } else {
                     if (WIFSIGNALED(status)) {
-                        fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado por señal %d]\n", pid, line, WTERMSIG(status));
+                        fprintf(stderr, GRIS "[execute_line()→ Proceso hijo %d (%s) finalizado por señal %d]\n", pid, jobs_list[0].cmd, WTERMSIG(status));
                     }
                 }
             } 
         }
     }
     jobs_list[0].pid = 0;
+    memset(jobs_list[0].cmd, '\0', sizeof(jobs_list[0].cmd));
     return 0;
 }
 
