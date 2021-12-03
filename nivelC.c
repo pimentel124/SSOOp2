@@ -1,6 +1,7 @@
 #include "cabecera.h"
 
 static char mi_shell[COMMAND_LINE_SIZE];  // variable global para guardar el nombre del minishell
+int n_pids = 1; // variable global n_pids, trabajos no finalizados
 
 // static pid_t foreground_pid = 0;
 struct info_process {
@@ -134,6 +135,7 @@ int execute_line(char *line) {
     char *args[ARGS_SIZE];
     pid_t pid, status;
     char command_line[COMMAND_LINE_SIZE];
+    int backg;
     strcpy(jobs_list[0].cmd, line);
     // copiamos la línea de comandos sin '\n' para guardarlo en el array de structs de los procesos
     memset(command_line, '\0', sizeof(command_line));
@@ -143,30 +145,74 @@ int execute_line(char *line) {
             #if DEBUGN3
                         fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
             #endif
-
+            
+            backg = is_background(args);
             pid = fork();
             jobs_list[0].pid=pid;
-            if (pid == 0)  // Proceso Hijo:
-            {
+            if (pid == 0){  // Proceso Hijo:
                 signal(SIGCHLD, SIG_DFL); 
                 signal(SIGINT, SIG_IGN);
+                if (backg){
+                    signal(SIGTSTP, SIG_IGN);
+                    }
+                else {
+                    signal(SIGTSTP, SIG_DFL);
+                    }
                 fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), jobs_list[0].cmd);
                 execvp(args[0], args);
                 fprintf(stderr, "%s: No se ha encontrado el comando\n", jobs_list[0].cmd);
                 exit(-1);
-            } else if (pid > 0)  // Proceso Padre:
-            {
-                signal(SIGTERM, ctrlc);  // associate ctrl+c handler to ctrlc function
-                jobs_list[0].status = 'E';
-                while (jobs_list[0].pid != 0){
-                    pause();
+                } 
+            else if (pid > 0){  // Proceso Padre:
+                if(!backg){
+                    signal(SIGTERM, ctrlc);  // associate ctrl+c handler to ctrlc function
+                    jobs_list[0].status = 'E';
+                    while (jobs_list[0].pid != 0){
+                        pause();
+                    }
+                } else{
+                    jobs_list_add(pid, 'E', command_line);
                 }
+
             } 
         }
     }
     return 0;
 }
 
+int is_background(char **args){
+  int i;
+  for(i=0; args[i] != NULL; i++);
+  if (!strcmp(args[i - 1], "&")){
+    args[i - 1] = NULL;
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+
+int jobs_list_find(pid_t pid){
+  int i;
+    for(i=1; i < N_JOBS; i++){
+        if (jobs_list[i].pid == pid){
+            return i;
+    }
+  }
+}
+
+int jobs_list_remove(int pos){
+  if (pos < n_pids){
+    n_pids--;
+    jobs_list[pos].pid = jobs_list[n_pids].pid;
+    strcpy(jobs_list[pos].cmd, jobs_list[n_pids].cmd);
+    jobs_list[pos].status = jobs_list[n_pids].status;
+    }
+  else{
+    return -1;
+  }
+return 0;
+}
 
 void reaper (int signum) {
     signal(SIGCHLD, reaper);
@@ -216,6 +262,7 @@ int main(int argc, char *argv[]) {
     //llamada al enterrador de zombies cuando un hijo acaba (señal SIGCHLD)
     signal(SIGINT, ctrlc);
     //SIGINT es la señal de interrupción que produce Ctrl+C
+    signal(SIGTSTP, ctrlz);
 
     // Inicializamos jobs[0]
     jobs_list[0].pid = 0;
