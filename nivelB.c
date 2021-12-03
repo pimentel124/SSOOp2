@@ -146,16 +146,15 @@ int execute_line(char *line) {
 
             pid = fork();
             jobs_list[0].pid=pid;
-            if (pid == 0)  // Proceso Hijo:
-            {
+            if (pid == 0){  // Proceso Hijo:
                 signal(SIGCHLD, SIG_DFL); 
                 signal(SIGINT, SIG_IGN);
                 fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), jobs_list[0].cmd);
                 execvp(args[0], args);
                 fprintf(stderr, "%s: No se ha encontrado el comando\n", jobs_list[0].cmd);
                 exit(-1);
-            } else if (pid > 0)  // Proceso Padre:
-            {
+                } 
+            else if (pid > 0){  // Proceso Padre:
                 signal(SIGTERM, ctrlc);  // associate ctrl+c handler to ctrlc function
                 jobs_list[0].status = 'E';
                 while (jobs_list[0].pid != 0){
