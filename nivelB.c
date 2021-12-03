@@ -132,11 +132,10 @@ int execute_line(char *line) {
     char *args[ARGS_SIZE];
     pid_t pid, status;
     char command_line[COMMAND_LINE_SIZE];
-
+    strcpy(jobs_list[0].cmd, line);
     // copiamos la línea de comandos sin '\n' para guardarlo en el array de structs de los procesos
     memset(command_line, '\0', sizeof(command_line));
     strcpy(command_line, line);  // antes de llamar a parse_args() que modifica line
-
     if (parse_args(args, line) > 0) {
         if (check_internal(args)) {
             #if DEBUGN3
@@ -144,6 +143,8 @@ int execute_line(char *line) {
             #endif
 
             pid = fork();
+            jobs_list[0].pid=pid;
+
             if (pid == 0)  // Proceso Hijo:
             {
                 signal(SIGCHLD, SIG_DFL); 
@@ -154,7 +155,7 @@ int execute_line(char *line) {
                 exit(-1);
             } else if (pid > 0)  // Proceso Padre:
             {
-                signal(SIGINT, ctrlc);  // associate ctrl+c handler to ctrlc function
+                signal(SIGTERM, ctrlc);  // associate ctrl+c handler to ctrlc function
                 jobs_list[0].status = 'E';
                 while (jobs_list[0].pid != 0){
                     pause();
@@ -184,13 +185,12 @@ void reaper (int signum) {
     }
 }
 
-
 void ctrlc(int signum){ //Manejador propio para la señal SIGINT (Ctrl+C). 
     signal(SIGINT, ctrlc);
     printf("\n");
     fflush(stdout);
     if (jobs_list[0].pid > 0) {  // if theres a process running in foreground
-        if (strcmp(jobs_list[0].cmd, mi_shell)) {  //if the process IS NOT the minishell
+        if (strcmp(jobs_list[0].cmd, mi_shell) != 0) {  //if the process IS NOT the minishell
             fprintf(stderr, GRIS "[ctrlc()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
             fprintf(stderr, GRIS "[ctrlc()→ Señal %d enviada a %d(%s) por %d(%s)]", SIGTERM, jobs_list[0].pid, jobs_list[0].cmd, getpid(), mi_shell);
             kill(jobs_list[0].pid, SIGTERM);
@@ -199,9 +199,9 @@ void ctrlc(int signum){ //Manejador propio para la señal SIGINT (Ctrl+C).
             fprintf(stderr, ROJO_T "[ctrlc()→ Señal no enviada debido a que el proceso en foreground es el shell]");
             }
         }
-        else {  //if theres no process running in foreground
+    else {  //if theres no process running in foreground
             fprintf(stderr, GRIS "[ctrlc()→ Señal %d no enviada por %d(%s) debido a que no hay proceso en foreground]", SIGTERM, getpid(), mi_shell);
-            }
+        }
         printf("\n");
         fflush(stdout);    
 }
