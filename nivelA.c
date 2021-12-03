@@ -153,14 +153,13 @@ int execute_line(char *line) {
             #endif
             
             pid = fork();
-            if (pid == 0)  // Proceso Hijo:
-            {
+            if (pid == 0){  // Proceso Hijo:
                 fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), jobs_list[0].cmd);
                 execvp(args[0], args);
                 fprintf(stderr, "%s: No se ha encontrado el comando\n", jobs_list[0].cmd);
                 exit(-1);
-            } else if (pid > 0)  // Proceso Padre:
-            {
+                } 
+            else if (pid > 0){  // Proceso Padre:
                 jobs_list[0].status = 'E';
                 wait(&status);
                 if (WIFEXITED(status)) {
