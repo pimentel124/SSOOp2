@@ -57,10 +57,12 @@ int internal_source(char **args) {
 }
 
 int internal_jobs(char **args) {
-#if DEBUGN1
-    printf("[internal_jobs()→ Esta función mostrará el PID de los procesos que no estén en foreground]\n");
-#endif
-    return 1;
+    int i;
+    for (i = 1; i < n_pids; i++){
+        printf("[%d] %d\t%c\t%s\n", i, jobs_list[i].pid, jobs_list[i].status,
+           jobs_list[i].cmd);
+    }
+    return 0;
 }
 
 int internal_fg(char **args) {
