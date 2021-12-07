@@ -34,6 +34,8 @@ int check_internal(char **args) {
         return internal_fg(args);
     if (!strcmp(args[0], "sleep"))
         return internal_fg(args);
+    if (!strcmp(args[0], "ps"))
+        return internal_fg(args);
     if (!strcmp(args[0], mi_shell))
         return internal_fg(args);
     if (!strcmp(args[0], "exit"))
@@ -59,8 +61,7 @@ int internal_source(char **args) {
 int internal_jobs(char **args) {
     int i;
     for (i = 1; i < n_pids; i++){
-        printf("[%d] %d\t%c\t%s\n", i, jobs_list[i].pid, jobs_list[i].status,
-           jobs_list[i].cmd);
+        printf("[%d] %d\t%c\t%s\n", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].cmd);
     }
     return 0;
 }
@@ -201,9 +202,7 @@ int jobs_list_add(pid_t pid, char status, char *command_line){
     jobs_list[n_pids].pid = pid;
     jobs_list[n_pids].status = status;
     strcpy(jobs_list[n_pids].cmd, command_line);
-    printf("[%d]\t%d\t%c\t%s\n",
-           n_pids, jobs_list[n_pids].pid, jobs_list[n_pids].status,
-           jobs_list[n_pids].cmd);
+    printf("[%d]\t%d\t%c\t%s\n", n_pids, jobs_list[n_pids].pid, jobs_list[n_pids].status, jobs_list[n_pids].cmd);
     n_pids++;
     return n_pids;
   }
@@ -221,6 +220,7 @@ int jobs_list_find(pid_t pid){
             return i;
     }
   }
+  return 0;
 }
 
 int jobs_list_remove(int pos){
@@ -240,7 +240,7 @@ void reaper (int signum) {
     signal(SIGCHLD, reaper);
     int status;
     pid_t pid;
-    int jobnum;
+    int numerojob;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         if (pid == jobs_list[0].pid){ /*FOREGROUND*/
             if (WIFEXITED(status)){
@@ -255,27 +255,20 @@ void reaper (int signum) {
             memset(jobs_list[0].cmd, '\0', sizeof(jobs_list[0].cmd));
             }
         else {
-            jobnum = jobs_list_find(pid);
-            if (jobnum){
+            numerojob = jobs_list_find(pid);
+            if (numerojob){
                 if (WIFEXITED(status))
                 {
-                fprintf(stderr, "\n[reaper()→ Proceso hijo %d en background (%s) "
-                                "finalizado con exit code %d]\n",
-                        pid, jobs_list[jobnum].cmd, WEXITSTATUS(status));
+                fprintf(stderr, "\n[reaper()→ Proceso hijo %d en background (%s) finalizado con exit code %d]\n", pid, jobs_list[numerojob].cmd, WEXITSTATUS(status));
                 fflush(stderr);
                 }
                 else if (WIFSIGNALED(status))
                 {
-                fprintf(stderr, "\n[reaper()→ Proceso hijo %d en background (%s) "
-                                "finalizado por señal %d]\n",
-                        pid, jobs_list[jobnum].cmd, WTERMSIG(status));
+                fprintf(stderr, "\n[reaper()→ Proceso hijo %d en background (%s) finalizado por señal %d]\n", pid, jobs_list[numerojob].cmd, WTERMSIG(status));
                 fflush(stderr);
                 }
-                fprintf(stderr, "\nTerminado PID %d (%s) en jobs_list[%d] con estatus %d\n",
-                        jobs_list[jobnum].pid,
-                        jobs_list[jobnum].cmd,
-                        jobnum, status);
-                jobs_list_remove(jobnum);
+                fprintf(stderr, "\nTerminado PID %d (%s) en jobs_list[%d] con estatus %d\n", jobs_list[numerojob].pid, jobs_list[numerojob].cmd, numerojob, status);
+                jobs_list_remove(numerojob);
                 fflush(stderr);
             }
         }
@@ -309,33 +302,21 @@ void ctrlz(int signum)
     if (strcmp(jobs_list[0].cmd, mi_shell)){
       jobs_list[0].status = 'D';
       jobs_list_add(jobs_list[0].pid, jobs_list[0].status, jobs_list[0].cmd);
-      fprintf(stderr, "\n[ctrlz()→ Soy el proceso con PID %d(%s), el "
-                      "proceso en foreground es %d(%s)]\n",
-              getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
-      fprintf(stderr, "[ctrlz()→ Señal %d enviada a %d(%s) por %d(%s)]\n",
-              signum, jobs_list[0].pid, jobs_list[0].cmd,
-              getpid(), mi_shell);
+      fprintf(stderr, "[ctrlz()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
+      fprintf(stderr, "[ctrlz()→ Señal %d (SIGSTP) enviada a %d(%s) por %d(%s)]\n",signum, jobs_list[0].pid, jobs_list[0].cmd, getpid(), mi_shell);
       kill(jobs_list[0].pid, SIGTSTP);
       jobs_list[0].pid = 0;
       jobs_list[0].status = 'F';
       strcpy(jobs_list[0].cmd, "");
     }
     else{
-      fprintf(stderr, "\n[ctrlz()→ Soy el proceso con PID %d(%s), el "
-                      "proceso en foreground es %d(%s)]\n",
-              getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
-      fprintf(stderr, "[ctrlz()→ Señal %d no enviada por %d(%s) debido a que"
-                      " su proceso en foreground es el shell]\n",
-              signum, getpid(), mi_shell);
+      fprintf(stderr, "[ctrlz()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
+      fprintf(stderr, "[ctrlz()→ Señal %d no enviada por %d(%s) debido a que su proceso en foreground es el shell]\n", signum, getpid(), mi_shell);
     }
   }
   else{
-    fprintf(stderr, "\n[ctrlz()→ Soy el proceso con PID %d(%s), el "
-                    "proceso en foreground es %d(%s)]\n",
-            getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
-    fprintf(stderr, "[ctrlz()→ Señal %d no enviada por %d(%s)] debido a que no"
-                    " hay proceso en foreground]\n",
-            signum, getpid(), mi_shell);
+    fprintf(stderr, "[ctrlz()→ Soy el proceso con PID %d(%s), el proceso en foreground es %d(%s)]\n", getpid(), mi_shell, jobs_list[0].pid, jobs_list[0].cmd);
+    fprintf(stderr, "[ctrlz()→ Señal %d no enviada por %d(%s)] debido a que no hay proceso en foreground]\n", signum, getpid(), mi_shell);
   }
 }
 
