@@ -33,6 +33,8 @@ int check_internal(char **args) {
         return internal_fg(args);
     if (!strcmp(args[0], "sleep"))
         return internal_fg(args);
+    if (!strcmp(args[0], "ps"))
+        return internal_fg(args);
     if (!strcmp(args[0], mi_shell))
         return internal_fg(args);
     if (!strcmp(args[0], "exit"))
