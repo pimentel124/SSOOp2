@@ -189,10 +189,8 @@ int execute_line(char *line)
             }
             else if (pid > 0) /*Proceso padre*/
             {
-                fprintf(stderr, "[execute_line()→ PID padre: %d(%s)]\n",
-                        getpid(), mi_shell);
-                fprintf(stderr, "[execute_line()→ PID hijo: %d(%s)]\n",
-                        pid, command_line);
+                fprintf(stderr, "[execute_line()→ PID padre: %d(%s)]\n", getpid(), mi_shell);
+                fprintf(stderr, "[execute_line()→ PID hijo: %d(%s)]\n", pid, command_line);
                 if (bkg) /*BACKGROUND*/
                 {
                     jobs_list_add(pid, 'E', command_line);
