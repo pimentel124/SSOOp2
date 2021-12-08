@@ -96,12 +96,10 @@ int internal_fg(char **args)
             {                                      // si está detenido
                 kill(jobs_list[pos].pid, SIGCONT); // hace que el proceso continúe
                 jobs_list[pos].status = 'E';       // se vuelve a poner como ejecutándose
-                printf("[internal_fg()→ señal 18 (SIGCONT) enviada a %d]\n",
-                       jobs_list[pos].pid);
+                printf("[internal_fg()→ señal 18 (SIGCONT) enviada a %d]\n", jobs_list[pos].pid);
             }
             int i = 0;
-            while (jobs_list[pos].cmd[i] != 0 &&
-                   jobs_list[pos].cmd[i] != '&')
+            while (jobs_list[pos].cmd[i] != 0 && jobs_list[pos].cmd[i] != '&')
             { // buscamos "&"
                 i++;
             }
@@ -150,8 +148,7 @@ int internal_bg(char **args)
             {
                 jobs_list[pos].status = 'E';
                 int i = 0;
-                while (jobs_list[pos].cmd[i] != 0 &&
-                       jobs_list[pos].cmd[i] != '&')
+                while (jobs_list[pos].cmd[i] != 0 && jobs_list[pos].cmd[i] != '&')
                 { // tiene & ?
                     i++;
                 }
@@ -162,10 +159,8 @@ int internal_bg(char **args)
                     jobs_list[pos].cmd[i + 2] = 0;
                 }
                 kill(jobs_list[pos].pid, SIGCONT); // hace que el proceso continúe
-                printf("[internal_bg()→ señal 18 (SIGCONT) enviada a %d]\n",
-                       jobs_list[pos].pid);
-                printf("[%d] %d\t%c\t%s\n", pos, jobs_list[pos].pid,
-                       jobs_list[pos].status, jobs_list[pos].cmd);
+                printf("[internal_bg()→ señal 18 (SIGCONT) enviada a %d]\n", jobs_list[pos].pid);
+                printf("[%d] %d\t%c\t%s\n", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].cmd);
             }
         }
         else
@@ -277,10 +272,8 @@ int execute_line(char *line)
             }
             else if (pid > 0) /*Proceso padre*/
             {
-                fprintf(stderr, "[execute_line()→ PID padre: %d(%s)]\n",
-                        getpid(), mi_shell);
-                fprintf(stderr, "[execute_line()→ PID hijo: %d(%s)]\n",
-                        pid, command_line);
+                fprintf(stderr, "[execute_line()→ PID padre: %d(%s)]\n", getpid(), mi_shell);
+                fprintf(stderr, "[execute_line()→ PID hijo: %d(%s)]\n", pid, command_line);
                 if (bkg) /*BACKGROUND*/
                 {
                     jobs_list_add(pid, 'E', command_line);
