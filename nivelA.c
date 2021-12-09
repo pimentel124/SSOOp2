@@ -6,6 +6,8 @@ la trocea en tokens y chequea si se trata de comandos internos
 (cd, export, source, jobs, fg, bg o exit). Si son externos los ejecuta con execvp()
 */
 
+//Los integrantes del grupo son Alvaro Pimentel, Andreu Marqués Goyes y Gregori Serra.
+
 #include "cabecera.h"
 
 static char mi_shell[COMMAND_LINE_SIZE];  // variable global para guardar el nombre del minishell
