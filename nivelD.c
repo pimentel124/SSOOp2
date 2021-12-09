@@ -1,3 +1,5 @@
+//Los integrantes del grupo son Alvaro Pimentel, Andreu Marqués Goyes y Gregori Serra.
+
 #include "cabecera.h"
 
 static char mi_shell[COMMAND_LINE_SIZE]; // variable global para guardar el nombre del minishell
