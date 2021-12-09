@@ -1,3 +1,5 @@
+//Los integrantes del grupo son Alvaro Pimentel, Andreu Marqués Goyes y Gregori Serra.
+
 #define _POSIX_C_SOURCE 200112L
 
 #define DEBUGN1 1  // parse_args()
