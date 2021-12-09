@@ -226,13 +226,13 @@ int is_background(char **args)
     return 0;
 }
 
-int jobs_list_add(pid_t pid, char status, char *command_line)
+int jobs_list_add(pid_t pid, char status, char *cmd)
 {
     if (n_pids < N_JOBS)
     {
         jobs_list[n_pids].pid = pid;
         jobs_list[n_pids].status = status;
-        strcpy(jobs_list[n_pids].cmd, command_line);
+        strcpy(jobs_list[n_pids].cmd, cmd);
         printf("[%d]\t%d\t%c\t%s\n", n_pids, jobs_list[n_pids].pid, jobs_list[n_pids].status, jobs_list[n_pids].cmd);
         n_pids++;
         return 0;
