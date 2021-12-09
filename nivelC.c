@@ -26,17 +26,7 @@ int check_internal(char **args)
         return internal_jobs(args);
     if (!strcmp(args[0], "bg"))
         return internal_bg(args);
-    if (!strcmp(args[0], "pwd"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "pws"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "ls"))
-        return internal_fg(args);
     if (!strcmp(args[0], "fg"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "sleep"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "ps"))
         return internal_fg(args);
     if (!strcmp(args[0], mi_shell))
         return internal_fg(args);
@@ -163,7 +153,7 @@ int execute_line(char *line)
     strcpy(command_line, line); //antes de llamar a parse_args() que modifica line
     if (parse_args(args, line) > 0)
     {
-        if (check_internal(args))
+        if (!check_internal(args))
         {
             #if DEBUGN3
             fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);

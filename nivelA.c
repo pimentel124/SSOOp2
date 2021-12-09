@@ -31,15 +31,7 @@ int check_internal(char **args) {
         return internal_jobs(args);
     if (!strcmp(args[0], "bg"))
         return internal_bg(args);
-    if (!strcmp(args[0], "pwd"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "pws"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "ls"))
-        return internal_fg(args);
     if (!strcmp(args[0], "fg"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "sleep"))
         return internal_fg(args);
     if (!strcmp(args[0], "exit"))
         exit(0);
@@ -147,11 +139,7 @@ int execute_line(char *line) {
     strcpy(command_line, line);  // antes de llamar a parse_args() que modifica line
 
     if (parse_args(args, line) > 0) {
-        if (check_internal(args)) {
-            #if DEBUGN3
-                        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
-            #endif
-            
+        if (!check_internal(args)) {            
             pid = fork();
             if (pid == 0){  // Proceso Hijo:
                 fprintf(stderr, GRIS "[execute_line()→ PID hijo: %d(%s)]\n" RESET_FORMATO, getpid(), jobs_list[0].cmd);
@@ -160,6 +148,9 @@ int execute_line(char *line) {
                 exit(-1);
                 } 
             else if (pid > 0){  // Proceso Padre:
+                #if DEBUGN3
+                    fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
+                #endif
                 jobs_list[0].status = 'E';
                 wait(&status);
                 if (WIFEXITED(status)) {

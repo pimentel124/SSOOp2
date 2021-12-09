@@ -26,17 +26,7 @@ int check_internal(char **args)
         return internal_jobs(args);
     if (!strcmp(args[0], "bg"))
         return internal_bg(args);
-    if (!strcmp(args[0], "pwd"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "pws"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "ls"))
-        return internal_fg(args);
     if (!strcmp(args[0], "fg"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "sleep"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "ps"))
         return internal_fg(args);
     if (!strcmp(args[0], mi_shell))
         return internal_fg(args);
@@ -76,47 +66,45 @@ int internal_jobs(char **args)
 int internal_fg(char **args)
 {
 #if DEBUGN1
-    //printf(GRIS "[internal_fg()→ Esta función enviará un trabajo detenido al foreground reactivando su ejecución, o uno del background al foreground ]\n");
+    printf(GRIS "[internal_fg()→ Esta función enviará un trabajo detenido al foreground reactivando su ejecución, o uno del background al foreground ]\n");
 #endif
-    int nargs, pos;
-    nargs = 0;
-    while (args[nargs] != NULL) {
-        nargs++;
+    int numargs, pos;
+    numargs = 0;
+    while (args[numargs] != NULL) {
+        numargs++;
     }
-    // si el comando no tiene el nº de tokens adecuado
-    if (nargs != 2){}
-        //imprimir_error("Error de sintaxis. Uso: <fg NºTRABAJO>");
+    if (numargs != 2){ //incorrect nº args
+        fprintf(stderr, "Error. Uso: <fg NºTRABAJO>\n");
+    }
     else
     {
-        pos = atoi(args[1]); // convierte la posición de string a int
-        if (pos > 0 && pos <= n_pids)
-        { // si la posición de la lista es de un
-            // proceso en background
-            if (jobs_list[pos].status == 'D')
-            {                                      // si está detenido
-                kill(jobs_list[pos].pid, SIGCONT); // hace que el proceso continúe
-                jobs_list[pos].status = 'E';       // se vuelve a poner como ejecutándose
+        pos = atoi(args[1]);
+        if (pos > 0 && pos <= n_pids){
+            //background
+            if (jobs_list[pos].status == 'D'){
+                kill(jobs_list[pos].pid, SIGCONT);
+                jobs_list[pos].status = 'E';
                 printf("[internal_fg()→ señal 18 (SIGCONT) enviada a %d]\n", jobs_list[pos].pid);
             }
             int i = 0;
             while (jobs_list[pos].cmd[i] != 0 && jobs_list[pos].cmd[i] != '&')
-            { // buscamos "&"
+            { // search &
                 i++;
             }
             if (jobs_list[pos].cmd[i] == '&')
-                jobs_list[pos].cmd[i - 1] = 0; // quitamos " &"
-            jobs_list[0] = jobs_list[pos];              // mueve el proceso a foreground
-            jobs_list_remove(pos);                      // elimina el proceso de background
+                jobs_list[pos].cmd[i - 1] = 0; // remove &
+            jobs_list[0] = jobs_list[pos];              // bg to fg
+            jobs_list_remove(pos);                      // remove bg
             printf("%s\n", jobs_list[0].cmd);
             while (jobs_list[0].pid != 0)
             {
-                pause(); // hace que el padre espere mientras no acabe el proceso
+                pause();
             }
+            
         }
-        else
-        {
+        else{
             fprintf(stderr, ROJO_T "%s", args[1]);
-            //imprimir_error(": no existe ese trabajo");
+            fprintf(stderr, "No existe ese trabajo\n");
         }
     }
     return 1;
@@ -124,52 +112,80 @@ int internal_fg(char **args)
 
 int internal_bg(char **args)
 {
-#if DEBUGN1
-    printf("[internal_bg()→ Esta función reactivará un proceso detenido para que siga ejecutándose pero en segundo plano]\n");
-#endif
-    int nargs, pos;
-    nargs = 0;
-    while (args[nargs] != NULL) {
-        nargs++;
+    #if DEBUGN1 
+        printf("[internal_bg()→ Esta función reactivará un proceso detenido para que siga ejecutándose pero en segundo plano]\n");
+    #endif
+    int numargs, pos;
+    numargs = 0;
+    while (args[numargs] != NULL) {
+        numargs++;
     }
-    if (nargs != 2){}
-        //imprimir_error("Error de sintaxis. Uso: <bg NºTRABAJO>");
-    else
-    {
+    if (numargs != 2){
+        fprintf(stderr, "Error. Uso: <fg NºTRABAJO>\n");
+    }
+    else{
         pos = atoi(args[1]);
         if (pos > 0 && pos <= n_pids)
         {
             if (jobs_list[pos].status == 'E')
-            { // si ya está ejecutándose en background
+            { //background
                 fprintf(stderr, ROJO_T "%s", args[1]);
-                //imprimir_error(": el trabajo ya está en 2º plano");
+                fprintf(stderr, "El trabajo ya está en 2º plano\n");
             }
             else
             {
                 jobs_list[pos].status = 'E';
                 int i = 0;
                 while (jobs_list[pos].cmd[i] != 0 && jobs_list[pos].cmd[i] != '&')
-                { // tiene & ?
+                { //search if contains &
                     i++;
                 }
                 if (jobs_list[pos].cmd[i] == 0)
-                { // añadimos " &"
+                { // add &
                     jobs_list[pos].cmd[i] = ' ';
                     jobs_list[pos].cmd[i + 1] = '&';
                     jobs_list[pos].cmd[i + 2] = 0;
                 }
-                kill(jobs_list[pos].pid, SIGCONT); // hace que el proceso continúe
+                kill(jobs_list[pos].pid, SIGCONT);
                 printf("[internal_bg()→ señal 18 (SIGCONT) enviada a %d]\n", jobs_list[pos].pid);
                 printf("[%d] %d\t%c\t%s\n", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].cmd);
             }
         }
-        else
-        {
+        else{
             fprintf(stderr, ROJO_T "%s", args[1]);
-            //imprimir_error(": no existe ese trabajo");
+            fprintf(stderr, "No existe ese trabajo\n");
         }
     }
     return 1;
+}
+
+int is_output_redirection (char **args){
+  int cont = 0;
+  while (args[cont] != NULL){
+    if (*args[cont] == '>' && args[cont+1] != NULL){
+        return 1;
+    }
+    cont++;
+  }
+  return 0;
+}
+
+void redirection_to(char **args){
+    int fd;
+    int numargs;
+    numargs = 0;
+    while (args[numargs] != NULL) {
+        numargs++;
+    }
+    fd = open (args[numargs-1],  O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR);
+    if (fd < 0) {
+        fprintf(stderr, "NULL\n");
+        exit(0);
+    }else{
+        args[numargs-2] = 0; // arg '>' to NULL
+        dup2(fd,1);
+        close(fd);
+    }
 }
 
 void imprimir_prompt()
@@ -246,7 +262,7 @@ int execute_line(char *line)
     strcpy(command_line, line); //antes de llamar a parse_args() que modifica line
     if (parse_args(args, line) > 0)
     {
-        if (check_internal(args))
+        if (!check_internal(args))
         {
 #if DEBUGN3
             fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
@@ -265,6 +281,9 @@ int execute_line(char *line)
                 else /*FOREGROUND*/
                 {
                     signal(SIGTSTP, SIG_DFL);
+                }
+                if(is_output_redirection(args)){
+                    redirection_to(args);
                 }
                 execvp(args[0], args);
                 fprintf(stderr, "%s: no se encontró la orden\n", command_line);

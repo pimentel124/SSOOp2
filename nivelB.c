@@ -23,15 +23,7 @@ int check_internal(char **args) {
         return internal_jobs(args);
     if (!strcmp(args[0], "bg"))
         return internal_bg(args);
-    if (!strcmp(args[0], "pwd"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "pws"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "ls"))
-        return internal_fg(args);
     if (!strcmp(args[0], "fg"))
-        return internal_fg(args);
-    if (!strcmp(args[0], "sleep"))
         return internal_fg(args);
     if (!strcmp(args[0], "ps"))
         return internal_fg(args);
@@ -134,20 +126,17 @@ int parse_args(char **args, char *line) {
 
 int execute_line(char *line) {
     char *args[ARGS_SIZE];
-    pid_t pid, status;
+    pid_t pid;
     char command_line[COMMAND_LINE_SIZE];
-    strcpy(jobs_list[0].cmd, line);
+
     // copiamos la línea de comandos sin '\n' para guardarlo en el array de structs de los procesos
+    strcpy(jobs_list[0].cmd, line);
     memset(command_line, '\0', sizeof(command_line));
     strcpy(command_line, line);  // antes de llamar a parse_args() que modifica line
-    if (parse_args(args, line) > 0) {
-        if (check_internal(args)) {
-            #if DEBUGN3
-                        fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
-            #endif
 
+    if (parse_args(args, line) > 0) {
+        if (!check_internal(args)) {
             pid = fork();
-            jobs_list[0].pid=pid;
             if (pid == 0){  // Proceso Hijo:
                 signal(SIGCHLD, SIG_DFL); 
                 signal(SIGINT, SIG_IGN);
@@ -157,7 +146,11 @@ int execute_line(char *line) {
                 exit(-1);
                 } 
             else if (pid > 0){  // Proceso Padre:
+                #if DEBUGN3
+                    fprintf(stderr, GRIS "[execute_line()→ PID padre: %d (%s)]\n" RESET_FORMATO, getpid(), mi_shell);
+                #endif
                 signal(SIGTERM, ctrlc);  // associate ctrl+c handler to ctrlc function
+                jobs_list[0].pid=pid;
                 jobs_list[0].status = 'E';
                 while (jobs_list[0].pid != 0){
                     pause();
@@ -175,15 +168,15 @@ void reaper (int signum) {
     pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
         if (WIFEXITED(status)){
-      fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d (%s) finalizado con exit(), estado: %d]\n", pid, jobs_list[0].cmd, WEXITSTATUS(status));
-    }
-    else if (WIFSIGNALED(status)){
-      fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d(%s) finalizado por señal %d]\n", pid, jobs_list[0].cmd, WEXITSTATUS(status));
-    }
+            fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d (%s) finalizado con exit(), estado: %d]\n", pid, jobs_list[0].cmd, WEXITSTATUS(status));
+        }
+        else if (WIFSIGNALED(status)){
+            fprintf(stderr, GRIS "[reaper()→ Proceso hijo %d(%s) finalizado por señal %d]\n", pid, jobs_list[0].cmd, WEXITSTATUS(status));
+        }
 
-    jobs_list[0].pid = 0;
-    jobs_list[0].status = 'F';
-    memset(jobs_list[0].cmd, '\0', sizeof(jobs_list[0].cmd));
+        jobs_list[0].pid = 0;
+        jobs_list[0].status = 'F';
+        memset(jobs_list[0].cmd, '\0', sizeof(jobs_list[0].cmd));
     }
 }
 
